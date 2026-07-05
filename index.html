@@ -1,0 +1,1827 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#08292c">
+<meta name="description" content="手机后置 9:16 水下水光互动 ASMR 拍摄工具，支持拍照、录制、声控和本地实时渲染。">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="水光镜 Pro Max">
+<link rel="manifest" href="manifest.webmanifest">
+<title>水光镜 Pro Max · 手机水下 ASMR 创作镜头</title>
+<style>
+:root{
+  --ink:#08292c;
+  --deep:#123f43;
+  --moon:#f5fffb;
+  --mist:#cfe8e2;
+  --wave:#9eece7;
+  --bio:#c9f5d7;
+  --brass:#e6c982;
+  --coral:#ffb6a8;
+  --glass:rgba(8,38,42,.50);
+  --line:rgba(158,236,231,.22);
+  --line-2:rgba(230,201,130,.34);
+  --serif:"Songti SC","STSong","Noto Serif SC","Noto Serif CJK SC","SimSun",serif;
+  --sans:-apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  --mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0;overflow:hidden;background:var(--ink);color:var(--moon);font-family:var(--sans);-webkit-font-smoothing:antialiased}
+body{user-select:none;-webkit-tap-highlight-color:transparent}
+#gl{position:fixed;inset:0;width:100vw;height:100vh;display:block;background:radial-gradient(110% 92% at 52% 8%,#477b78 0%,#1c5659 42%,#08292c 100%);cursor:crosshair}
+#cam{display:none}
+button,input{font:inherit}
+button{border:0}
+button:focus-visible,input:focus-visible{outline:2px solid var(--brass);outline-offset:3px}
+
+#intro{position:fixed;inset:0;z-index:40;display:grid;place-items:center;text-align:center;padding:24px;
+  background:radial-gradient(130% 105% at 50% 10%,rgba(255,230,170,.10),rgba(8,41,44,.52) 74%);
+  -webkit-backdrop-filter:blur(2px) saturate(1.08);backdrop-filter:blur(2px) saturate(1.08);
+  transition:opacity .85s ease}
+#intro.gone{opacity:0;pointer-events:none}
+.intro-inner{width:min(92vw,760px);transform:translateY(-2vh)}
+.logo-cn{font-family:var(--serif);font-weight:600;font-size:clamp(58px,11vw,116px);letter-spacing:.22em;text-indent:.22em;color:var(--moon);
+  text-shadow:0 0 32px rgba(142,231,234,.34),0 0 96px rgba(183,247,208,.12)}
+.logo-en{margin-top:8px;font-size:12px;letter-spacing:.5em;text-indent:.5em;color:rgba(239,250,250,.62);font-weight:600}
+.desc{margin:26px auto 0;max-width:34em;line-height:2;color:rgba(239,250,250,.86);font-size:15px}
+.chips{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin:18px 0 30px;color:rgba(239,250,250,.68);font-size:12px;letter-spacing:.08em}
+.chips span{border:1px solid rgba(245,255,251,.20);border-radius:999px;background:rgba(8,38,42,.30);padding:7px 12px}
+.start-actions{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+.primary{cursor:pointer;border-radius:999px;padding:16px 44px;min-height:52px;color:#083034;background:linear-gradient(135deg,#fff0b8,#9eece7 54%,#c9f5d7);
+  font-size:16px;font-weight:700;letter-spacing:.28em;text-indent:.28em;box-shadow:0 14px 46px rgba(127,228,231,.34),inset 0 1px 0 rgba(255,255,255,.55);
+  transition:transform .2s ease,box-shadow .2s ease}
+.primary:hover{transform:translateY(-2px);box-shadow:0 18px 58px rgba(127,228,231,.48),inset 0 1px 0 rgba(255,255,255,.6)}
+.linkbtn{cursor:pointer;border-bottom:1px solid rgba(239,250,250,.28);padding:0 0 3px;color:rgba(239,250,250,.65);background:transparent;letter-spacing:.08em}
+.linkbtn:hover{color:var(--wave);border-color:var(--wave)}
+.privacy{margin:30px auto 0;max-width:44em;line-height:1.9;color:rgba(239,250,250,.46);font-size:12px;letter-spacing:.04em}
+
+.ui{transition:opacity .55s ease,transform .55s ease}
+body.pre .ui{opacity:0;pointer-events:none}
+body.idle .ui{opacity:0;pointer-events:none}
+body.ui-hidden .ui{opacity:0!important;pointer-events:none!important}
+body.idle{cursor:none}
+#brand{position:fixed;top:22px;left:24px;z-index:20;font-family:var(--serif);font-size:21px;letter-spacing:.28em;color:rgba(239,250,250,.84);text-shadow:0 2px 24px rgba(0,0,0,.25)}
+#brand i{display:block;margin-top:5px;font-style:normal;font-family:var(--sans);font-size:10px;letter-spacing:.3em;color:rgba(239,250,250,.43)}
+
+#hud{position:fixed;left:18px;bottom:18px;z-index:25;width:min(330px,calc(100vw - 36px));max-height:calc(100vh - 36px)}
+.panel{background:var(--glass);border:1px solid var(--line);border-radius:14px;box-shadow:0 20px 60px rgba(0,0,0,.42),inset 0 1px 0 rgba(255,255,255,.06);
+  -webkit-backdrop-filter:blur(18px) saturate(1.18);backdrop-filter:blur(18px) saturate(1.18);overflow:hidden;max-height:inherit;display:flex;flex-direction:column}
+.panel-head{display:flex;align-items:center;gap:10px;padding:12px 14px;border-bottom:1px solid var(--line);background:linear-gradient(180deg,rgba(142,231,234,.08),transparent)}
+.mark{width:18px;height:18px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#fff 0 10%,var(--wave) 12% 34%,rgba(183,247,208,.22) 38% 62%,transparent 66%);
+  box-shadow:0 0 20px rgba(142,231,234,.45)}
+.ptitle{font-size:12px;letter-spacing:.24em;color:var(--wave);font-weight:700;flex:1}
+.tiny{font-size:10px;color:rgba(239,250,250,.48);letter-spacing:.08em}
+.panel-body{padding:12px 14px 14px;overflow:auto}
+.seclabel{display:flex;align-items:center;gap:8px;margin:12px 0 8px;color:rgba(239,250,250,.48);font-size:10px;letter-spacing:.28em;text-transform:uppercase}
+.seclabel:first-child{margin-top:2px}
+.seclabel:after{content:"";height:1px;background:var(--line);flex:1}
+.presets,.sound-modes{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+.preset,.sound-mode,.tg,.iconbtn{cursor:pointer;color:rgba(245,255,251,.76);background:rgba(158,236,231,.08);border:1px solid var(--line);border-radius:10px;min-height:34px;padding:8px 9px;font-size:12px;letter-spacing:.08em;transition:background .18s ease,color .18s ease,border-color .18s ease,transform .18s ease}
+.preset:hover,.sound-mode:hover,.tg:hover,.iconbtn:hover{color:var(--moon);border-color:var(--line-2);background:rgba(158,236,231,.14)}
+.preset.on,.sound-mode.on,.tg.on{color:#083034;background:linear-gradient(135deg,rgba(255,240,184,.96),rgba(158,236,231,.90));border-color:transparent;font-weight:700;box-shadow:0 0 16px rgba(230,201,130,.20)}
+.ctrl{display:grid;grid-template-columns:1fr auto;align-items:center;gap:4px 9px;margin:10px 0 4px}
+.ctrl span{font-size:12px;color:rgba(239,250,250,.76);letter-spacing:.03em}
+.ctrl b{font-size:11px;color:var(--wave);font-weight:600;font-variant-numeric:tabular-nums}
+.ctrl input[type=range]{grid-column:1/-1;width:100%;height:22px;margin:0;appearance:none;background:transparent;cursor:pointer}
+.ctrl input[type=range]::-webkit-slider-runnable-track{height:3px;border-radius:3px;background:linear-gradient(90deg,var(--wave),rgba(230,201,130,.78),rgba(158,236,231,.18))}
+.ctrl input[type=range]::-moz-range-track{height:3px;border-radius:3px;background:rgba(142,231,234,.22)}
+.ctrl input[type=range]::-webkit-slider-thumb{appearance:none;width:14px;height:14px;border-radius:50%;margin-top:-5.5px;background:var(--moon);box-shadow:0 0 10px rgba(142,231,234,.8),0 1px 3px rgba(0,0,0,.45)}
+.ctrl input[type=range]::-moz-range-thumb{width:14px;height:14px;border:0;border-radius:50%;background:var(--moon);box-shadow:0 0 10px rgba(142,231,234,.8)}
+.toggles{display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px;margin-top:13px}
+.tg.rec.active{background:linear-gradient(135deg,var(--brass),#ffe0a0);color:#241804;border-color:transparent;font-family:var(--mono);letter-spacing:.04em;animation:pulse 1.5s ease infinite}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(214,176,106,.45)}50%{box-shadow:0 0 0 9px rgba(214,176,106,0)}}
+
+#hint{position:fixed;right:22px;bottom:25px;z-index:20;max-width:min(440px,calc(100vw - 44px));padding:8px 13px;border:1px solid rgba(142,231,234,.12);border-radius:999px;
+  background:rgba(4,17,24,.38);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);font-size:11px;line-height:1.6;letter-spacing:.08em;color:rgba(239,250,250,.5)}
+#toast{position:fixed;left:50%;bottom:100px;z-index:50;max-width:min(680px,86vw);transform:translateX(-50%) translateY(8px);opacity:0;pointer-events:none;
+  padding:11px 22px;border-radius:999px;background:rgba(5,21,27,.74);border:1px solid rgba(142,231,234,.2);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);
+  color:var(--moon);font-size:13px;letter-spacing:.06em;text-align:center;transition:opacity .35s ease,transform .35s ease}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+#safeFrame{position:fixed;inset:0;z-index:18;pointer-events:none;opacity:0;transition:opacity .35s ease}
+#safeFrame:before{content:"";position:absolute;top:50%;left:50%;height:min(92vh,177.78vw);width:min(92vw,51.75vh);transform:translate(-50%,-50%);
+  border:1px solid rgba(214,176,106,.52);box-shadow:0 0 0 9999px rgba(0,0,0,.12),inset 0 0 40px rgba(214,176,106,.08)}
+#safeFrame:after{content:"9:16";position:absolute;left:50%;top:calc(50% - min(46vh,88.89vw) - 22px);transform:translateX(-50%);font:11px var(--mono);letter-spacing:.12em;color:rgba(214,176,106,.72)}
+body.show-safe #safeFrame{opacity:1}
+
+#meter{display:grid;grid-template-columns:32px 1fr;gap:7px 9px;align-items:center;margin:4px 0 2px}
+.mlabel{font-size:10px;color:rgba(239,250,250,.5);letter-spacing:.12em}
+.mbar{height:5px;border-radius:4px;background:rgba(158,236,231,.10);overflow:hidden}
+.mbar i{display:block;height:100%;width:100%;border-radius:4px;transform-origin:left center;transform:scaleX(0);background:linear-gradient(90deg,var(--wave),var(--brass));transition:transform .08s linear}
+#flash{position:fixed;inset:0;z-index:60;background:#fff;opacity:0;pointer-events:none;transition:opacity .5s ease}
+#flash.on{opacity:.8;transition:none}
+
+#mobileHud{display:none}
+.mobile-status{display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:8px;text-shadow:0 1px 12px rgba(0,0,0,.45)}
+.mobile-status b{font-size:12px;letter-spacing:.12em;color:var(--moon)}
+.mobile-status span{font-size:10px;letter-spacing:.16em;color:rgba(239,250,250,.58)}
+.mobile-dock{border:1px solid rgba(158,236,231,.22);border-radius:18px;background:rgba(5,25,30,.54);box-shadow:0 18px 54px rgba(0,0,0,.42),inset 0 1px 0 rgba(255,255,255,.08);-webkit-backdrop-filter:blur(18px) saturate(1.2);backdrop-filter:blur(18px) saturate(1.2);padding:9px}
+.mobile-quick{display:grid;grid-template-columns:repeat(4,1fr);gap:7px}
+.mbtn{cursor:pointer;min-height:42px;border-radius:12px;border:1px solid rgba(158,236,231,.22);background:rgba(158,236,231,.10);color:rgba(245,255,251,.80);font-size:12px;font-weight:700;letter-spacing:.08em;transition:transform .18s ease,background .18s ease,color .18s ease,border-color .18s ease}
+.mbtn.on{color:#08292c;background:linear-gradient(135deg,rgba(255,240,184,.96),rgba(158,236,231,.92));border-color:transparent}
+.mobile-capture{display:grid;grid-template-columns:1fr 76px 1fr;align-items:center;gap:12px;margin-top:10px}
+.mobile-rec{position:relative;justify-self:center;width:76px;height:76px;border-radius:50%;cursor:pointer;border:2px solid rgba(255,240,184,.78);background:rgba(255,255,255,.08);box-shadow:0 0 0 7px rgba(8,38,42,.42),0 12px 34px rgba(0,0,0,.36),inset 0 1px 0 rgba(255,255,255,.25)}
+.mobile-rec:before{content:"";position:absolute;inset:16px;border-radius:50%;background:linear-gradient(135deg,#fff0b8,#9eece7 56%,#c9f5d7);box-shadow:0 0 22px rgba(158,236,231,.55);transition:border-radius .18s ease,transform .18s ease,background .18s ease}
+.mobile-rec.recording:before{border-radius:13px;transform:scale(.78);background:linear-gradient(135deg,#ffb6a8,#ffe0a0)}
+.mobile-rec span{position:absolute;left:50%;top:calc(100% + 7px);transform:translateX(-50%);font:10px var(--mono);letter-spacing:.02em;color:rgba(255,240,184,.90);white-space:nowrap}
+.mobile-rotate{display:none}
+
+@media (max-width:760px){
+  #brand{font-size:18px;top:16px;left:16px}
+  #hud{left:10px;right:10px;bottom:10px;width:auto}
+  .panel-body{max-height:48vh}
+  .toggles{grid-template-columns:1fr 1fr}
+  #hint{display:none}
+  .primary{width:100%;padding-inline:22px}
+  .logo-cn{font-size:clamp(48px,17vw,72px);letter-spacing:.16em;text-indent:.16em}
+  .logo-en{font-size:10px;letter-spacing:.34em;text-indent:.34em}
+  .desc{font-size:14px;line-height:1.85}
+
+  body.mobile-pro #mobileHud{display:block;position:fixed;left:max(10px,env(safe-area-inset-left));right:max(10px,env(safe-area-inset-right));bottom:calc(10px + env(safe-area-inset-bottom));z-index:34;transition:opacity .35s ease,transform .35s ease}
+  body.mobile-pro.idle #mobileHud{opacity:.42;pointer-events:auto;transform:translateY(8px)}
+  body.mobile-pro.sheet-open #mobileHud{opacity:0;visibility:hidden;pointer-events:none;transform:translateY(18px)}
+  body.mobile-pro #brand{top:calc(14px + env(safe-area-inset-top));left:max(14px,env(safe-area-inset-left));font-size:17px}
+  body.mobile-pro #brand i{font-size:9px;letter-spacing:.22em}
+  body.mobile-pro #toast{bottom:calc(128px + env(safe-area-inset-bottom));max-width:86vw}
+  body.mobile-pro #hud{left:0;right:0;bottom:0;width:auto;max-height:calc(82vh - env(safe-area-inset-top));z-index:38;opacity:0;pointer-events:none;transform:translateY(26px);transition:opacity .28s ease,transform .28s ease}
+  body.mobile-pro.sheet-open #hud{opacity:1;pointer-events:auto;transform:translateY(0)}
+  body.mobile-pro #hud .panel{border-radius:18px 18px 0 0;border-left:0;border-right:0;border-bottom:0;max-height:calc(82vh - env(safe-area-inset-top))}
+  body.mobile-pro #hud .panel-head{padding:14px 16px;cursor:pointer}
+  body.mobile-pro #hud .tiny{font-size:0}
+  body.mobile-pro #hud .tiny:after{content:"收起";font-size:11px}
+  body.mobile-pro #hud .panel-body{max-height:calc(82vh - 54px - env(safe-area-inset-top));padding:13px 16px calc(18px + env(safe-area-inset-bottom))}
+  body.mobile-pro .presets,body.mobile-pro .sound-modes{gap:8px}
+  body.mobile-pro .preset,body.mobile-pro .sound-mode,body.mobile-pro .tg{min-height:44px;font-size:13px}
+  body.mobile-pro .ctrl{margin:12px 0 7px}
+  body.mobile-pro .ctrl input[type=range]{height:30px}
+}
+@media (max-width:900px) and (orientation:landscape){
+  body.mobile-pro #brand{font-size:14px;top:10px}
+  body.mobile-pro #mobileHud{display:block;position:fixed;z-index:34;left:auto;right:calc(10px + env(safe-area-inset-right));top:50%;bottom:auto;width:86px;transform:translateY(-50%)}
+  body.mobile-pro.idle #mobileHud{transform:translateY(-50%);opacity:.45}
+  body.mobile-pro #hint{display:none}
+  body.mobile-pro .mobile-status{display:none}
+  body.mobile-pro .mobile-dock{padding:7px;border-radius:15px}
+  body.mobile-pro .mobile-quick{grid-template-columns:1fr;gap:6px}
+  body.mobile-pro .mbtn{min-height:36px;border-radius:10px;padding:4px;font-size:11px;letter-spacing:.04em}
+  body.mobile-pro .mobile-capture{grid-template-columns:1fr;gap:8px;margin-top:8px}
+  body.mobile-pro .mobile-rec{width:58px;height:58px}
+  body.mobile-pro .mobile-rec:before{inset:12px}
+  body.mobile-pro .mobile-rotate{display:block;position:fixed;left:50%;bottom:calc(12px + env(safe-area-inset-bottom));transform:translateX(-50%);z-index:23;max-width:calc(100vw - 150px);overflow:hidden;text-overflow:ellipsis;padding:8px 13px;border-radius:999px;border:1px solid rgba(158,236,231,.16);background:rgba(4,17,24,.42);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);font-size:11px;letter-spacing:.06em;color:rgba(239,250,250,.58);white-space:nowrap}
+  body.mobile-pro #hud{left:12px;right:auto;bottom:12px;width:min(380px,48vw);max-height:calc(100vh - 24px);opacity:0;pointer-events:none;transform:translateY(12px)}
+  body.mobile-pro.sheet-open #hud{opacity:1;pointer-events:auto;transform:translateY(0)}
+  body.mobile-pro #hud .panel{border:1px solid var(--line);border-radius:16px;max-height:calc(100vh - 24px)}
+  body.mobile-pro #hud .panel-body{max-height:calc(100vh - 82px);padding-bottom:14px}
+}
+@media (prefers-reduced-motion:reduce){
+  #intro,.ui,#toast,#safeFrame{transition:none}
+  .tg.rec.active{animation:none}
+}
+</style>
+</head>
+<body class="pre">
+<canvas id="gl"></canvas>
+<video id="cam" playsinline muted></video>
+
+<div id="intro">
+  <div class="intro-inner">
+    <div class="logo-cn">水光镜</div>
+    <div class="logo-en">PRO MAX · MOBILE UNDERWATER ASMR</div>
+    <p class="desc">打开手机后置镜头，把眼前世界放进一层温柔的浅水里。手在镜头前慢慢划过，折射、焦散、气泡和轻轻的水滴声一起跟着动；打开声控，说话和音乐会掀起真正的声浪。</p>
+    <div class="chips">
+      <span>手机后置</span><span>9:16 竖屏直出</span><span>手势触水</span><span>声浪可视化</span><span>拍照·录制</span><span>无上传</span>
+    </div>
+    <div class="start-actions">
+      <button id="startBtn" class="primary">开启 Pro Max 镜头</button>
+      <button id="noCamBtn" class="linkbtn">先不用摄像头，用指尖试水</button>
+    </div>
+    <p class="privacy">画面、麦克风分析与水声都在本地浏览器内实时完成。手机请用 HTTPS 页面打开；建议戴耳机录制。</p>
+  </div>
+</div>
+
+<div id="brand" class="ui">水光镜<i>SOUND &amp; LIGHT · UNDERWATER ASMR</i></div>
+<div id="safeFrame" class="ui"></div>
+
+<div id="mobileHud" class="ui" aria-label="手机拍摄控制">
+  <div class="mobile-status"><b id="mFacingLabel">后置镜头</b><span>9:16 PRO MAX</span></div>
+  <div class="mobile-dock">
+    <div class="mobile-quick">
+      <button id="mSoundBtn" class="mbtn on" type="button">声音</button>
+      <button id="mFlipBtn" class="mbtn" type="button">后置</button>
+      <button id="mPresetBtn" class="mbtn" type="button">浅水</button>
+      <button id="mSheetBtn" class="mbtn" type="button">参数</button>
+    </div>
+    <div class="mobile-capture">
+      <button id="mPhotoBtn" class="mbtn" type="button">拍照</button>
+      <button id="mRecBtn" class="mobile-rec" type="button" aria-label="开始录制"><span></span></button>
+      <button id="mSafeBtn" class="mbtn on" type="button">9:16</button>
+    </div>
+  </div>
+  <div class="mobile-rotate">转回竖屏，更适合 9:16 发布</div>
+</div>
+
+<div id="hud" class="ui">
+  <div class="panel">
+    <div class="panel-head">
+      <span class="mark"></span>
+      <span class="ptitle">水面控制台</span>
+      <span class="tiny">H 隐藏</span>
+    </div>
+    <div class="panel-body">
+      <div class="seclabel">预设</div>
+      <div class="presets">
+        <button class="preset on" data-preset="gentle">温柔浅水</button>
+        <button class="preset" data-preset="submerge">潜流原感</button>
+        <button class="preset" data-preset="clear">清亮水面</button>
+        <button class="preset" data-preset="viral">直播抓眼</button>
+        <button class="preset" data-preset="still">静水留白</button>
+        <button class="preset" data-preset="deep">深水可选</button>
+      </div>
+
+      <div class="seclabel">音色</div>
+      <div class="sound-modes">
+        <button class="sound-mode on" data-sound="gentle">温柔浅水</button>
+        <button class="sound-mode" data-sound="submerge">潜流原声</button>
+        <button class="sound-mode" data-sound="bubble">细碎气泡</button>
+        <button class="sound-mode" data-sound="drops">只要水滴</button>
+      </div>
+
+      <div class="seclabel">水声</div>
+      <div class="ctrl"><span>水声音量</span><b id="vVolume"></b><input id="volume" type="range" min="0" max="1" step="0.01"></div>
+      <div class="ctrl"><span>水流密度</span><b id="vFlow"></b><input id="flow" type="range" min="0" max="1" step="0.01"></div>
+      <div class="ctrl"><span>触水灵敏</span><b id="vSens"></b><input id="sens" type="range" min="0" max="1" step="0.01"></div>
+      <div class="ctrl"><span>水下柔化</span><b id="vDepth"></b><input id="depth" type="range" min="0" max="1" step="0.01"></div>
+      <div class="ctrl"><span>环境底声</span><b id="vAmbient"></b><input id="ambient" type="range" min="0" max="1" step="0.01"></div>
+      <div class="ctrl"><span>水滴亮度</span><b id="vSparkle"></b><input id="sparkle" type="range" min="0" max="1" step="0.01"></div>
+
+      <div class="seclabel">声控</div>
+      <div class="ctrl"><span>声控灵敏</span><b id="vMicSens"></b><input id="micSens" type="range" min="0" max="1" step="0.01"></div>
+      <div id="meter">
+        <span class="mlabel">低音</span><span class="mbar"><i id="mBass"></i></span>
+        <span class="mlabel">人声</span><span class="mbar"><i id="mMid"></i></span>
+        <span class="mlabel">高音</span><span class="mbar"><i id="mTreb"></i></span>
+      </div>
+
+      <div class="seclabel">画面</div>
+      <div class="ctrl"><span>涟漪强度</span><b id="vRipple"></b><input id="ripple" type="range" min="0.2" max="1.8" step="0.01"></div>
+      <div class="ctrl"><span>焦散光</span><b id="vCaustics"></b><input id="caustics" type="range" min="0" max="1.25" step="0.01"></div>
+      <div class="ctrl"><span>水面光束</span><b id="vShafts"></b><input id="shafts" type="range" min="0" max="1.25" step="0.01"></div>
+      <div class="ctrl"><span>悬浮气泡</span><b id="vBubbles"></b><input id="bubbles" type="range" min="0" max="1.25" step="0.01"></div>
+      <div class="ctrl"><span>水色滤镜</span><b id="vTint"></b><input id="tint" type="range" min="0" max="1" step="0.01"></div>
+      <div class="ctrl"><span>余波长度</span><b id="vDamping"></b><input id="damping" type="range" min="0.965" max="0.997" step="0.001"></div>
+
+      <div class="toggles">
+        <button id="soundBtn" class="tg on">声音</button>
+        <button id="mirrorBtn" class="tg on">镜像</button>
+        <button id="micBtn" class="tg">声控</button>
+        <button id="recBtn" class="tg rec">录制</button>
+        <button id="photoBtn" class="tg">拍照</button>
+        <button id="showBtn" class="tg">演绎</button>
+        <button id="camBtn" class="tg">镜头</button>
+        <button id="flipBtn" class="tg">翻转</button>
+        <button id="safeBtn" class="tg">9:16</button>
+        <button id="fsBtn" class="tg">全屏</button>
+        <button id="calmBtn" class="tg">平静</button>
+        <button id="wmBtn" class="tg on">水印</button>
+        <button id="hideBtn" class="tg">隐藏</button>
+        <button id="resetBtn" class="tg">重置</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="hint" class="ui">挥手/说话/放音乐都会触发涟漪 · R 录制 · P 拍照 · D 演绎 · F 全屏 · 开着 9:16 时录制和拍照会直出竖屏</div>
+<div id="toast"></div>
+<div id="flash"></div>
+
+<script>
+"use strict";
+
+const canvas = document.getElementById("gl");
+const video = document.getElementById("cam");
+const intro = document.getElementById("intro");
+const startBtn = document.getElementById("startBtn");
+const noCamBtn = document.getElementById("noCamBtn");
+const toastEl = document.getElementById("toast");
+const reduceMotion = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
+const mobileQuery = window.matchMedia ? matchMedia("(max-width: 760px), (pointer: coarse)") : { matches:false };
+const isMobileCreator = !!(mobileQuery.matches || (navigator.maxTouchPoints > 1 && Math.min(innerWidth, innerHeight) < 920));
+if (isMobileCreator) document.body.classList.add("mobile-pro", "show-safe");
+
+const state = {
+  mirror:true,
+  sound:true,
+  camOn:false,
+  recording:false,
+  preset:"gentle",
+  soundMode:"gentle",
+  volume:.42,
+  flow:.22,
+  sens:.62,
+  depth:.30,
+  ambient:.06,
+  sparkle:.18,
+  ripple:.72,
+  caustics:.68,
+  shafts:.44,
+  bubbles:.28,
+  tint:.38,
+  damping:.989,
+  micSens:.68,
+  watermark:true
+};
+if (isMobileCreator){
+  Object.assign(state, {
+    mirror:false,
+    volume:.34,
+    flow:.18,
+    ambient:.025,
+    sparkle:.16,
+    ripple:.66,
+    caustics:.62,
+    shafts:.38,
+    bubbles:.22,
+    tint:.34
+  });
+}
+
+const PRESETS = {
+  gentle:{soundMode:"gentle",volume:.42,flow:.22,sens:.62,depth:.30,ambient:.06,sparkle:.18,ripple:.72,caustics:.68,shafts:.44,bubbles:.28,tint:.38,damping:.989},
+  submerge:{soundMode:"submerge",volume:.58,flow:.36,sens:.62,depth:.48,ambient:.12,sparkle:.30,ripple:.88,caustics:.52,shafts:.42,bubbles:.42,tint:.55,damping:.990},
+  clear:{soundMode:"gentle",volume:.46,flow:.28,sens:.70,depth:.18,ambient:.03,sparkle:.28,ripple:.98,caustics:.86,shafts:.56,bubbles:.24,tint:.22,damping:.986},
+  viral:{soundMode:"bubble",volume:.58,flow:.48,sens:.88,depth:.24,ambient:.08,sparkle:.52,ripple:1.20,caustics:.95,shafts:.72,bubbles:.72,tint:.34,damping:.984},
+  still:{soundMode:"drops",volume:.26,flow:.10,sens:.36,depth:.26,ambient:0,sparkle:.10,ripple:.38,caustics:.44,shafts:.28,bubbles:.14,tint:.34,damping:.995},
+  deep:{soundMode:"submerge",volume:.42,flow:.30,sens:.46,depth:.66,ambient:.12,sparkle:.16,ripple:.58,caustics:.32,shafts:.38,bubbles:.38,tint:.66,damping:.994}
+};
+const PRESET_LABELS = {
+  gentle:"浅水",
+  submerge:"潜流",
+  clear:"清亮",
+  viral:"抓眼",
+  still:"静水",
+  deep:"深水"
+};
+
+const SOUND_MODES = {
+  gentle:{bed:.45,wash:.42,drop:.72,spark:.40,bright:.90,swoosh:.42,tail:.18},
+  submerge:{bed:.85,wash:.72,drop:.82,spark:.48,bright:.72,swoosh:.58,tail:.28},
+  bubble:{bed:.28,wash:.34,drop:1.00,spark:.72,bright:1.04,swoosh:.36,tail:.36},
+  drops:{bed:.04,wash:.08,drop:.88,spark:.18,bright:.95,swoosh:.12,tail:.05}
+};
+
+let started = false;
+let videoReady = false;
+let camStream = null;
+let gl = null, isGL2 = false, fmt = null, quad = null;
+let pUpd = null, pDrop = null, pRender = null;
+let simA = null, simB = null, simW = 2, simH = 2, videoTex = null;
+let motionTarget = 0, motionSmooth = 0, audioPulse = 0;
+let lastActivity = 0, nextIdleDrop = 2600, lastSwoosh = 0;
+const dropQueue = [];
+
+const VS = `
+attribute vec2 aPos;
+varying vec2 vUV;
+void main(){
+  vUV = aPos * 0.5 + 0.5;
+  gl_Position = vec4(aPos, 0.0, 1.0);
+}`;
+
+const FS_UPDATE = `
+precision highp float;
+varying vec2 vUV;
+uniform sampler2D uTex;
+uniform vec2 uDelta;
+uniform float uDamping;
+void main(){
+  vec4 c = texture2D(uTex, vUV);
+  float hl = texture2D(uTex, vUV - vec2(uDelta.x, 0.0)).r;
+  float hr = texture2D(uTex, vUV + vec2(uDelta.x, 0.0)).r;
+  float hb = texture2D(uTex, vUV - vec2(0.0, uDelta.y)).r;
+  float ht = texture2D(uTex, vUV + vec2(0.0, uDelta.y)).r;
+  float avg = (hl + hr + hb + ht) * 0.25;
+  float v = c.g + (avg - c.r) * 2.0;
+  v *= uDamping;
+  float h = clamp(c.r + v, -2.5, 2.5) * 0.9992;
+  gl_FragColor = vec4(h, v, 0.0, 1.0);
+}`;
+
+const FS_DROP = `
+precision highp float;
+varying vec2 vUV;
+uniform sampler2D uTex;
+uniform vec2 uCenter;
+uniform float uRadius;
+uniform float uStrength;
+uniform float uAspect;
+void main(){
+  vec4 c = texture2D(uTex, vUV);
+  float dist = length((vUV - uCenter) * vec2(uAspect, 1.0));
+  float d = max(0.0, 1.0 - dist / uRadius);
+  d = 0.5 - cos(d * 3.14159265) * 0.5;
+  c.r += d * uStrength;
+  gl_FragColor = c;
+}`;
+
+const FS_RENDER = `
+precision highp float;
+varying vec2 vUV;
+uniform sampler2D uWater;
+uniform sampler2D uVideo;
+uniform vec2 uDelta;
+uniform float uTime;
+uniform float uRefract;
+uniform float uAmbient;
+uniform float uAspect;
+uniform vec2 uVidScale;
+uniform float uHasVideo;
+uniform float uAudio;
+uniform float uCaustics;
+uniform float uShafts;
+uniform float uBubbles;
+uniform float uTint;
+uniform float uDepth;
+
+float hash(vec2 p){ return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453123); }
+float noise(vec2 p){
+  vec2 i = floor(p), f = fract(p);
+  f = f * f * (3.0 - 2.0 * f);
+  return mix(mix(hash(i), hash(i + vec2(1.0, 0.0)), f.x),
+             mix(hash(i + vec2(0.0, 1.0)), hash(i + vec2(1.0, 1.0)), f.x), f.y);
+}
+float caustic(vec2 p, float t){
+  float a = noise(p * 7.0 + vec2(t * 0.16, -t * 0.11));
+  float b = noise(p * 13.0 + vec2(-t * 0.13, t * 0.19));
+  return pow(max(0.0, a * b * 2.15), 2.55);
+}
+float particles(vec2 p0, float t){
+  float acc = 0.0;
+  for (int i = 0; i < 3; i++){
+    float fi = float(i);
+    vec2 p = p0 * (9.0 + fi * 7.5);
+    p.y -= t * (0.22 + fi * 0.18);
+    p.x += sin(t * 0.15 + fi * 2.4) * 0.26;
+    vec2 id = floor(p);
+    vec2 f = fract(p) - 0.5;
+    float rn = hash(id + fi * 19.7);
+    vec2 o = (vec2(hash(id + 3.2), hash(id + 8.1)) - 0.5) * 0.78;
+    float d = length(f - o);
+    acc += (1.0 - smoothstep(0.0, 0.044 + rn * 0.05, d)) * step(0.92, rn) * (0.35 + rn * 0.65);
+  }
+  return acc;
+}
+void main(){
+  vec2 uv = vUV;
+  vec2 uvA = vec2(uv.x * uAspect, uv.y);
+  float t = uTime;
+
+  float hl = texture2D(uWater, uv - vec2(uDelta.x, 0.0)).r;
+  float hr = texture2D(uWater, uv + vec2(uDelta.x, 0.0)).r;
+  float hb = texture2D(uWater, uv - vec2(0.0, uDelta.y)).r;
+  float ht = texture2D(uWater, uv + vec2(0.0, uDelta.y)).r;
+  vec2 grad = vec2(hr - hl, ht - hb);
+
+  vec2 breath;
+  breath.x = sin(uv.y * 20.0 + t * 0.68) * 0.55 + sin(uv.y * 8.0 - t * 0.38 + 1.7) * 0.45;
+  breath.y = cos(uv.x * 16.0 + t * 0.54) * 0.55 + sin(uv.x * 7.0 + t * 0.34) * 0.45;
+  breath *= 0.0020 * uAmbient;
+  breath += (vec2(noise(uvA * 4.3 + t * 0.08), noise(uvA * 4.8 - t * 0.07 + 31.7)) - 0.5) * 0.0048 * uAmbient;
+
+  vec2 off = (grad * uRefract + breath) * (1.0 + uAudio * 0.34);
+  vec2 q0 = uv + off * 0.92 - 0.5;
+  vec2 q1 = uv + off - 0.5;
+  vec2 q2 = uv + off * 1.09 - 0.5;
+
+  vec3 col;
+  if (uHasVideo > 0.5){
+    col.r = texture2D(uVideo, q0 * uVidScale + 0.5).r;
+    col.g = texture2D(uVideo, q1 * uVidScale + 0.5).g;
+    col.b = texture2D(uVideo, q2 * uVidScale + 0.5).b;
+    float lum = dot(col, vec3(0.299, 0.587, 0.114));
+    col = mix(col, vec3(lum), 0.08 + uTint * 0.06);
+    col *= vec3(1.06, 0.94, 1.04);
+    col = mix(col, vec3(0.42, 0.72, 0.70), 0.08 + uTint * 0.10);
+  } else {
+    float g = clamp(uv.y + off.y * 4.0, 0.0, 1.0);
+    col = mix(vec3(0.040,0.140,0.145), vec3(0.30,0.58,0.55), g);
+    col += (noise(uvA * 3.0 + t * 0.04) - 0.5) * 0.035;
+  }
+
+  vec3 n = normalize(vec3(-(grad + breath * 2.6) * 25.0, 1.0));
+  vec3 L = normalize(vec3(-0.36, 0.62, 0.60));
+  float spec = pow(max(dot(n, L), 0.0), 88.0);
+  float rim = pow(1.0 - n.z, 1.72);
+  float ca = caustic(uvA, t);
+  float shaft = pow(noise(vec2(uv.x * 3.2 - uv.y * 0.9 + t * 0.045, 2.1)), 3.0) * smoothstep(0.05, 0.95, uv.y);
+  float bubble = particles(uvA, t);
+
+  vec3 tintCol = mix(vec3(1.03, 1.02, 0.92), vec3(0.70, 1.02, 1.12), uTint);
+  col *= tintCol;
+  col = mix(col, vec3(0.045,0.150,0.155), uDepth * (0.10 + (1.0 - uv.y) * 0.08));
+  col += ca * vec3(0.58,0.88,0.82) * 0.18 * uCaustics;
+  col += shaft * vec3(0.38,0.44,0.28) * 0.22 * uShafts;
+  col += bubble * vec3(0.74,0.94,1.0) * 0.095 * uBubbles;
+  col += spec * vec3(0.86,1.0,1.0) * 0.52;
+  col += rim * vec3(0.35,0.78,0.86) * 0.20;
+  col *= 1.0 + uAudio * 0.11;
+
+  float vig = smoothstep(1.35, 0.42, length(uv - 0.5) * 1.72);
+  col *= mix(0.64 - uDepth * 0.08, 1.04, vig);
+  gl_FragColor = vec4(col, 1.0);
+}`;
+
+const GLOPT = { alpha:false, antialias:false, depth:false, stencil:false, powerPreference:"high-performance" };
+
+function $(sel){ return document.querySelector(sel); }
+function $all(sel){ return Array.from(document.querySelectorAll(sel)); }
+function clamp(v,a,b){ return Math.max(a, Math.min(b, v)); }
+
+let toastTimer = 0;
+function toast(msg){
+  toastEl.textContent = msg;
+  toastEl.classList.add("show");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => toastEl.classList.remove("show"), 3200);
+}
+
+function shader(type, src){
+  const s = gl.createShader(type);
+  gl.shaderSource(s, src);
+  gl.compileShader(s);
+  if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) throw new Error(gl.getShaderInfoLog(s));
+  return s;
+}
+function makeProgram(fs){
+  const p = gl.createProgram();
+  gl.attachShader(p, shader(gl.VERTEX_SHADER, VS));
+  gl.attachShader(p, shader(gl.FRAGMENT_SHADER, fs));
+  gl.linkProgram(p);
+  if (!gl.getProgramParameter(p, gl.LINK_STATUS)) throw new Error(gl.getProgramInfoLog(p));
+  const u = {};
+  const n = gl.getProgramParameter(p, gl.ACTIVE_UNIFORMS);
+  for (let i = 0; i < n; i++){
+    const inf = gl.getActiveUniform(p, i);
+    u[inf.name] = gl.getUniformLocation(p, inf.name);
+  }
+  return { prog:p, aPos:gl.getAttribLocation(p, "aPos"), u };
+}
+function pickFormat(){
+  const tries = [];
+  if (isGL2 && gl.getExtension("EXT_color_buffer_float")){
+    tries.push({ internal:gl.RGBA16F, type:gl.HALF_FLOAT });
+    tries.push({ internal:gl.RGBA32F, type:gl.FLOAT });
+  }
+  if (!isGL2){
+    const hf = gl.getExtension("OES_texture_half_float");
+    if (hf) tries.push({ internal:gl.RGBA, type:hf.HALF_FLOAT_OES });
+    if (gl.getExtension("OES_texture_float")) tries.push({ internal:gl.RGBA, type:gl.FLOAT });
+  }
+  for (const f of tries){
+    const t = gl.createTexture();
+    gl.bindTexture(gl.TEXTURE_2D, t);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+    gl.texImage2D(gl.TEXTURE_2D, 0, f.internal, 4, 4, 0, gl.RGBA, f.type, null);
+    const fb = gl.createFramebuffer();
+    gl.bindFramebuffer(gl.FRAMEBUFFER, fb);
+    gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, t, 0);
+    const ok = gl.checkFramebufferStatus(gl.FRAMEBUFFER) === gl.FRAMEBUFFER_COMPLETE;
+    gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+    gl.deleteFramebuffer(fb);
+    gl.deleteTexture(t);
+    if (ok) return f;
+  }
+  return null;
+}
+function makeTarget(w,h){
+  const t = gl.createTexture();
+  gl.bindTexture(gl.TEXTURE_2D, t);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+  gl.texImage2D(gl.TEXTURE_2D, 0, fmt.internal, w, h, 0, gl.RGBA, fmt.type, null);
+  const fb = gl.createFramebuffer();
+  gl.bindFramebuffer(gl.FRAMEBUFFER, fb);
+  gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, t, 0);
+  gl.clearColor(0,0,0,0);
+  gl.clear(gl.COLOR_BUFFER_BIT);
+  gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+  return {t, fb};
+}
+function buildSim(){
+  if (simA){ gl.deleteTexture(simA.t); gl.deleteFramebuffer(simA.fb); }
+  if (simB){ gl.deleteTexture(simB.t); gl.deleteFramebuffer(simB.fb); }
+  const aspect = canvas.width / canvas.height;
+  const simBase = isMobileCreator ? 384 : 512;
+  const simMin = isMobileCreator ? 80 : 96;
+  if (aspect >= 1){ simW = simBase; simH = Math.max(simMin, Math.round(simBase / aspect)); }
+  else { simH = simBase; simW = Math.max(simMin, Math.round(simBase * aspect)); }
+  simA = makeTarget(simW, simH);
+  simB = makeTarget(simW, simH);
+}
+function initGL(){
+  gl = canvas.getContext("webgl2", GLOPT);
+  isGL2 = !!gl;
+  if (!gl) gl = canvas.getContext("webgl", GLOPT) || canvas.getContext("experimental-webgl", GLOPT);
+  if (!gl) throw new Error("no-webgl");
+  fmt = pickFormat();
+  if (!fmt) throw new Error("no-float");
+  gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
+  quad = gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER, quad);
+  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1, 1,-1, -1,1, 1,1]), gl.STATIC_DRAW);
+  pUpd = makeProgram(FS_UPDATE);
+  pDrop = makeProgram(FS_DROP);
+  pRender = makeProgram(FS_RENDER);
+  videoTex = gl.createTexture();
+  gl.activeTexture(gl.TEXTURE1);
+  gl.bindTexture(gl.TEXTURE_2D, videoTex);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+  gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array([8,30,38,255]));
+}
+function bindProgram(p){
+  gl.useProgram(p.prog);
+  gl.bindBuffer(gl.ARRAY_BUFFER, quad);
+  gl.enableVertexAttribArray(p.aPos);
+  gl.vertexAttribPointer(p.aPos, 2, gl.FLOAT, false, 0, 0);
+}
+function blit(){ gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4); }
+function swapSim(){ const s = simA; simA = simB; simB = s; }
+function simStep(){
+  bindProgram(pUpd);
+  gl.uniform2f(pUpd.u.uDelta, 1 / simW, 1 / simH);
+  gl.uniform1f(pUpd.u.uDamping, state.damping);
+  gl.uniform1i(pUpd.u.uTex, 0);
+  for (let i = 0; i < 2; i++){
+    gl.bindFramebuffer(gl.FRAMEBUFFER, simB.fb);
+    gl.viewport(0,0,simW,simH);
+    gl.activeTexture(gl.TEXTURE0);
+    gl.bindTexture(gl.TEXTURE_2D, simA.t);
+    blit();
+    swapSim();
+  }
+}
+function clearWater(){
+  if (!simA || !simB) return;
+  gl.bindFramebuffer(gl.FRAMEBUFFER, simA.fb);
+  gl.clearColor(0,0,0,0);
+  gl.clear(gl.COLOR_BUFFER_BIT);
+  gl.bindFramebuffer(gl.FRAMEBUFFER, simB.fb);
+  gl.clear(gl.COLOR_BUFFER_BIT);
+  gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+  motion.prev = null;
+}
+function applyDrops(){
+  if (!dropQueue.length) return;
+  bindProgram(pDrop);
+  gl.uniform1f(pDrop.u.uAspect, canvas.width / canvas.height);
+  gl.uniform1i(pDrop.u.uTex, 0);
+  const n = Math.min(dropQueue.length, 14);
+  for (let i = 0; i < n; i++){
+    const d = dropQueue[i];
+    gl.bindFramebuffer(gl.FRAMEBUFFER, simB.fb);
+    gl.viewport(0,0,simW,simH);
+    gl.activeTexture(gl.TEXTURE0);
+    gl.bindTexture(gl.TEXTURE_2D, simA.t);
+    gl.uniform2f(pDrop.u.uCenter, d.x, d.y);
+    gl.uniform1f(pDrop.u.uRadius, Math.max(0.008, d.r));
+    gl.uniform1f(pDrop.u.uStrength, d.s);
+    blit();
+    swapSim();
+  }
+  dropQueue.splice(0, n);
+}
+function uploadVideo(){
+  if (!videoReady || video.readyState < 2) return;
+  gl.activeTexture(gl.TEXTURE1);
+  gl.bindTexture(gl.TEXTURE_2D, videoTex);
+  try { gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, video); } catch (e) {}
+}
+function render(t){
+  gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+  gl.viewport(0,0,canvas.width,canvas.height);
+  bindProgram(pRender);
+  gl.activeTexture(gl.TEXTURE0);
+  gl.bindTexture(gl.TEXTURE_2D, simA.t);
+  gl.uniform1i(pRender.u.uWater, 0);
+  gl.activeTexture(gl.TEXTURE1);
+  gl.bindTexture(gl.TEXTURE_2D, videoTex);
+  gl.uniform1i(pRender.u.uVideo, 1);
+  gl.uniform2f(pRender.u.uDelta, 1 / simW, 1 / simH);
+  gl.uniform1f(pRender.u.uTime, t);
+  gl.uniform1f(pRender.u.uRefract, state.ripple * 1.08);
+  gl.uniform1f(pRender.u.uAmbient, 0.22 + state.flow * 0.55 + state.ripple * 0.18);
+  gl.uniform1f(pRender.u.uAspect, canvas.width / canvas.height);
+  gl.uniform1f(pRender.u.uHasVideo, (videoReady && state.camOn) ? 1 : 0);
+  gl.uniform1f(pRender.u.uAudio, audioPulse);
+  gl.uniform1f(pRender.u.uCaustics, state.caustics);
+  gl.uniform1f(pRender.u.uShafts, state.shafts);
+  gl.uniform1f(pRender.u.uBubbles, state.bubbles);
+  gl.uniform1f(pRender.u.uTint, state.tint);
+  gl.uniform1f(pRender.u.uDepth, state.depth);
+  let sx = 1, sy = 1;
+  if (videoReady && video.videoWidth){
+    const va = video.videoWidth / video.videoHeight;
+    const ca = canvas.width / canvas.height;
+    if (va > ca) sx = ca / va; else sy = va / ca;
+  }
+  gl.uniform2f(pRender.u.uVidScale, sx * (state.mirror ? -1 : 1), sy);
+  blit();
+}
+
+const motion = {
+  cv:document.createElement("canvas"), ctx:null, prev:null, W:0, H:0, GX:0, GY:0,
+  cellV:null, cellX:null, cellY:null, env:null
+};
+function buildMotion(){
+  const ca = canvas.width / canvas.height;
+  motion.W = 104;
+  motion.H = Math.max(28, Math.min(104, Math.round(104 / ca)));
+  motion.cv.width = motion.W;
+  motion.cv.height = motion.H;
+  motion.ctx = motion.cv.getContext("2d", { willReadFrequently:true });
+  motion.prev = null;
+  motion.GX = Math.ceil(motion.W / 6);
+  motion.GY = Math.ceil(motion.H / 6);
+  const n = motion.GX * motion.GY;
+  motion.cellV = new Float32Array(n);
+  motion.cellX = new Float32Array(n);
+  motion.cellY = new Float32Array(n);
+  motion.env = new Float32Array(n);
+}
+function detectMotion(now){
+  if (!videoReady || video.readyState < 2 || !motion.ctx) return;
+  const m = motion, W = m.W, H = m.H, ctx = m.ctx;
+  const vw = video.videoWidth, vh = video.videoHeight;
+  if (!vw || !vh) return;
+  const va = vw / vh, ta = W / H;
+  let sx = 0, sy = 0, sw = vw, sh = vh;
+  if (va > ta){ sw = vh * ta; sx = (vw - sw) / 2; }
+  else { sh = vw / ta; sy = (vh - sh) / 2; }
+  ctx.save();
+  if (state.mirror){ ctx.translate(W,0); ctx.scale(-1,1); }
+  ctx.drawImage(video, sx, sy, sw, sh, 0, 0, W, H);
+  ctx.restore();
+  let data;
+  try { data = ctx.getImageData(0,0,W,H).data; } catch (e) { return; }
+  if (!m.prev){ m.prev = new Uint8ClampedArray(data); return; }
+
+  m.cellV.fill(0);
+  m.cellX.fill(0);
+  m.cellY.fill(0);
+  let total = 0;
+  const prev = m.prev, GX = m.GX;
+  const thr = 62 - state.sens * 30;
+  for (let y = 0; y < H; y++){
+    const gy = (y / 6) | 0;
+    for (let x = 0; x < W; x++){
+      const i = (y * W + x) * 4;
+      const d = Math.abs(data[i] - prev[i]) + Math.abs(data[i + 1] - prev[i + 1]) + Math.abs(data[i + 2] - prev[i + 2]);
+      if (d > thr){
+        const gi = gy * GX + ((x / 6) | 0);
+        m.cellV[gi] += d;
+        m.cellX[gi] += d * x;
+        m.cellY[gi] += d * y;
+        total += d;
+      }
+    }
+  }
+  m.prev.set(data);
+  motionTarget = Math.max(motionTarget, Math.min(1, total / (33000 - state.sens * 15000)));
+
+  const cand = [], onsets = [];
+  const active = 720 - state.sens * 330;
+  const onset = 1240 - state.sens * 520;
+  for (let i = 0; i < m.cellV.length; i++){
+    const v = m.cellV[i], envPrev = m.env[i];
+    if (v > active) cand.push({i, v});
+    if (v > onset && envPrev < active * .55) onsets.push({i, v});
+    m.env[i] = Math.max(v, envPrev * 0.82);
+  }
+  cand.sort((a,b) => b.v - a.v);
+  const top = cand.slice(0, 6);
+  for (const c of top){
+    const px = m.cellX[c.i] / c.v, py = m.cellY[c.i] / c.v;
+    const ux = px / W, uy = 1 - py / H;
+    const ms = Math.min(1, c.v / (5200 - state.sens * 1600));
+    dropQueue.push({x:ux, y:uy, r:0.020 + 0.032 * ms, s:(0.09 + 0.43 * ms) * state.ripple * (.72 + state.sens * .52)});
+    lastActivity = now;
+  }
+  if (started && onsets.length){
+    onsets.sort((a,b) => b.v - a.v);
+    for (const o of onsets.slice(0,2)){
+      const px = m.cellX[o.i] / o.v, ux = px / W;
+      AudioEng.bloop((ux - .5) * 1.7, Math.min(1, o.v / 5800), .72);
+    }
+  }
+  if (started && top.length){
+    const ms0 = Math.min(1, top[0].v / 5800);
+    if (ms0 > .72 && now - lastSwoosh > 680){
+      lastSwoosh = now;
+      const ux = m.cellX[top[0].i] / top[0].v / W;
+      AudioEng.swoosh((ux - .5) * 1.5, ms0);
+    }
+  }
+}
+
+const AudioEng = {
+  ctx:null, comp:null, master:null, recDest:null, convIn:null, muffle:null,
+  wash:null, washBP:null, sparkGain:null, bedGain:null,
+  whiteBuf:null, brownBuf:null, lastBloop:0, lastAmbient:0, _wash:0, ready:false,
+  profile(){
+    return SOUND_MODES[state.soundMode] || SOUND_MODES.gentle;
+  },
+  init(){
+    if (this.ready) return;
+    const AC = window.AudioContext || window.webkitAudioContext;
+    if (!AC) return;
+    const ctx = this.ctx = new AC();
+    const comp = this.comp = ctx.createDynamicsCompressor();
+    comp.threshold.value = -14; comp.knee.value = 22; comp.ratio.value = 5; comp.attack.value = .008; comp.release.value = .28;
+    const muffle = this.muffle = ctx.createBiquadFilter();
+    muffle.type = "lowpass"; muffle.frequency.value = this.muffleHz(); muffle.Q.value = .32;
+    const master = this.master = ctx.createGain();
+    master.gain.value = this.masterLevel();
+    comp.connect(muffle); muffle.connect(master); master.connect(ctx.destination);
+    try { this.recDest = ctx.createMediaStreamDestination(); master.connect(this.recDest); } catch (e) {}
+
+    const conv = ctx.createConvolver();
+    conv.buffer = this.makeIR(1.8, 2.7);
+    const wet = ctx.createGain(); wet.gain.value = .28;
+    this.convIn = ctx.createGain();
+    this.convIn.connect(conv); conv.connect(wet); wet.connect(comp);
+
+    this.whiteBuf = this.makeNoise("white");
+    this.brownBuf = this.makeNoise("brown");
+
+    const bedSrc = this.loopSrc(this.brownBuf);
+    const bedLP = ctx.createBiquadFilter(); bedLP.type = "lowpass"; bedLP.frequency.value = 360; bedLP.Q.value = .52;
+    const bedGain = this.bedGain = ctx.createGain(); bedGain.gain.value = this.bedLevel();
+    bedSrc.connect(bedLP); bedLP.connect(bedGain); bedGain.connect(comp);
+    this.lfo(.055, 66, bedLP.frequency);
+
+    const washSrc = this.loopSrc(this.whiteBuf);
+    const bp = this.washBP = ctx.createBiquadFilter(); bp.type = "bandpass"; bp.frequency.value = 760; bp.Q.value = .70;
+    const wg = this.wash = ctx.createGain(); wg.gain.value = 0;
+    washSrc.connect(bp); bp.connect(wg); wg.connect(comp);
+    const send = ctx.createGain(); send.gain.value = .08; wg.connect(send); send.connect(this.convIn);
+    this.lfo(.28, 80, bp.frequency);
+
+    const spSrc = this.loopSrc(this.whiteBuf);
+    const hp = ctx.createBiquadFilter(); hp.type = "highpass"; hp.frequency.value = 2800;
+    const sg = this.sparkGain = ctx.createGain(); sg.gain.value = 0;
+    spSrc.connect(hp); hp.connect(sg); sg.connect(comp);
+    this.ready = true;
+  },
+  bedLevel(){
+    if (state.ambient <= 0) return 0;
+    const prof = this.profile();
+    return state.ambient * (.085 + state.depth * .030 + state.flow * .018) * prof.bed;
+  },
+  masterLevel(){
+    return (state.sound && state.volume > 0) ? Math.pow(state.volume, 1.5) : 0;
+  },
+  washLevel(level, prof){
+    if (state.ambient <= 0) return 0;
+    const base = state.ambient * (.012 + state.flow * .018);
+    const motion = level * (.040 + state.flow * .080) * Math.min(1, state.ambient * 2.2);
+    return (base + motion) * prof.wash;
+  },
+  muffleHz(){ return 1100 + (1 - state.depth) * 4700; },
+  makeNoise(kind){
+    const ctx = this.ctx, len = Math.floor(ctx.sampleRate * 2.5);
+    const buf = ctx.createBuffer(2, len, ctx.sampleRate);
+    for (let ch = 0; ch < 2; ch++){
+      const d = buf.getChannelData(ch);
+      let last = 0;
+      for (let i = 0; i < len; i++){
+        const w = Math.random() * 2 - 1;
+        if (kind === "brown"){ last = (last + .018 * w) / 1.018; d[i] = last * 2.1; }
+        else d[i] = w * .65;
+      }
+    }
+    return buf;
+  },
+  loopSrc(buf){
+    const s = this.ctx.createBufferSource();
+    s.buffer = buf; s.loop = true; s.start();
+    return s;
+  },
+  lfo(freq, depth, param){
+    const o = this.ctx.createOscillator();
+    const g = this.ctx.createGain();
+    o.frequency.value = freq; g.gain.value = depth; o.connect(g); g.connect(param); o.start();
+  },
+  makeIR(dur, decay){
+    const ctx = this.ctx, len = Math.floor(ctx.sampleRate * dur);
+    const buf = ctx.createBuffer(2, len, ctx.sampleRate);
+    for (let ch = 0; ch < 2; ch++){
+      const d = buf.getChannelData(ch);
+      for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, decay);
+    }
+    return buf;
+  },
+  panNode(p){
+    if (this.ctx.createStereoPanner){
+      const n = this.ctx.createStereoPanner();
+      n.pan.value = clamp(p, -1, 1);
+      return n;
+    }
+    return this.ctx.createGain();
+  },
+  bloop(p, strength, vol, when){
+    if (!this.ready || !state.sound || state.volume <= 0) return;
+    const prof = this.profile();
+    vol = vol === undefined ? 1 : vol;
+    when = when || 0;
+    const nowMs = performance.now();
+    if (when === 0 && nowMs - this.lastBloop < 86) return;
+    if (when === 0) this.lastBloop = nowMs;
+    const ctx = this.ctx, t0 = ctx.currentTime + .006 + when;
+    const dur = .11 + Math.random() * .17;
+    const f0 = Math.max(140, (210 + Math.random() * 360 - strength * 70) * prof.bright);
+    const o = ctx.createOscillator(); o.type = "sine";
+    o.frequency.setValueAtTime(f0, t0);
+    o.frequency.exponentialRampToValueAtTime(f0 * (1.45 + Math.random() * .62), t0 + dur);
+    const lp = ctx.createBiquadFilter(); lp.type = "lowpass"; lp.frequency.value = 1550 + state.sparkle * 1150 - state.depth * 280;
+    const g = ctx.createGain();
+    const peak = Math.max(.001, (.030 + .115 * strength) * vol * prof.drop * (.78 + state.sparkle * .36));
+    g.gain.setValueAtTime(.0001, t0);
+    g.gain.exponentialRampToValueAtTime(peak, t0 + .008);
+    g.gain.exponentialRampToValueAtTime(.0001, t0 + dur * 1.9);
+    const pn = this.panNode(p);
+    o.connect(lp); lp.connect(g); g.connect(pn); pn.connect(this.comp);
+    const send = ctx.createGain(); send.gain.value = .18 + prof.tail * .35; g.connect(send); send.connect(this.convIn);
+    o.start(t0); o.stop(t0 + dur * 2 + .1);
+    if (Math.random() < (.10 + state.flow * .14 + prof.tail * .12)) this.bloop(p + (Math.random() - .5) * .35, strength * .48, vol * .54, .06 + Math.random() * .09);
+  },
+  swoosh(p, strength){
+    if (!this.ready || !state.sound || state.volume <= 0) return;
+    if (state.ambient <= 0) return;
+    const prof = this.profile();
+    const ctx = this.ctx, t0 = ctx.currentTime + .006;
+    const src = ctx.createBufferSource(); src.buffer = this.whiteBuf; src.loop = true;
+    const bp = ctx.createBiquadFilter(); bp.type = "bandpass"; bp.Q.value = 1.1;
+    bp.frequency.setValueAtTime(1180 + state.sparkle * 520, t0);
+    bp.frequency.exponentialRampToValueAtTime(440 + state.depth * 120, t0 + .42);
+    const g = ctx.createGain();
+    g.gain.setValueAtTime(.0001, t0);
+    g.gain.exponentialRampToValueAtTime(Math.max(.001, .042 * strength * prof.swoosh), t0 + .04);
+    g.gain.exponentialRampToValueAtTime(.0001, t0 + .48);
+    const pn = this.panNode(p);
+    src.connect(bp); bp.connect(g); g.connect(pn); pn.connect(this.comp);
+    const send = ctx.createGain(); send.gain.value = .25; g.connect(send); send.connect(this.convIn);
+    src.start(t0, Math.random() * 1.5); src.stop(t0 + .62);
+  },
+  tick(level){
+    if (!this.ready) return;
+    const prof = this.profile();
+    const t = this.ctx.currentTime;
+    this.muffle.frequency.setTargetAtTime(this.muffleHz(), t, .18);
+    if (state.ambient <= 0){
+      this.bedGain.gain.cancelScheduledValues(t);
+      this.wash.gain.cancelScheduledValues(t);
+      this.sparkGain.gain.cancelScheduledValues(t);
+      this.bedGain.gain.setValueAtTime(0, t);
+      this.wash.gain.setValueAtTime(0, t);
+      this.sparkGain.gain.setValueAtTime(0, t);
+      this._wash = 0;
+      return;
+    }
+    const target = this.washLevel(level, prof);
+    this.wash.gain.setTargetAtTime(target, t, target > this._wash ? .08 : .34);
+    this._wash = target;
+    this.washBP.frequency.setTargetAtTime(560 + level * 820 + state.flow * 170 + state.sparkle * 360 - state.depth * 120, t, .18);
+    this.sparkGain.gain.setTargetAtTime(state.ambient <= 0 ? 0 : level * (.006 + state.sparkle * .026) * prof.spark * Math.min(1, state.ambient * 2.2), t, .22);
+    this.bedGain.gain.setTargetAtTime(this.bedLevel(), t, .35);
+  },
+  ambient(now){
+    if (!this.ready || !state.sound) return;
+    if (state.volume <= 0) return;
+    if (state.ambient <= 0 && state.soundMode !== "drops") return;
+    const prof = this.profile();
+    const gap = 1700 + (1 - state.flow) * 5200 + Math.random() * 1900;
+    if (now - this.lastAmbient > gap){
+      this.lastAmbient = now;
+      const x = .12 + Math.random() * .76, y = .16 + Math.random() * .68;
+      dropQueue.push({x, y, r:.014 + Math.random() * .022, s:(.045 + Math.random() * .08) * state.ripple});
+      this.bloop((x - .5) * 1.6, .18 + Math.random() * .22, (.22 + state.flow * .22) * prof.drop);
+    }
+  },
+  setParams(){
+    if (!this.ready) return;
+    const prof = this.profile();
+    const t = this.ctx.currentTime;
+    const masterTarget = this.masterLevel();
+    this.master.gain.cancelScheduledValues(t);
+    if (masterTarget <= 0) this.master.gain.setValueAtTime(0, t);
+    else this.master.gain.setTargetAtTime(masterTarget, t, .08);
+    this.muffle.frequency.setTargetAtTime(this.muffleHz(), t, .08);
+    if (state.ambient <= 0){
+      this.bedGain.gain.cancelScheduledValues(t);
+      this.wash.gain.cancelScheduledValues(t);
+      this.sparkGain.gain.cancelScheduledValues(t);
+      this.bedGain.gain.setValueAtTime(0, t);
+      this.wash.gain.setValueAtTime(0, t);
+      this.sparkGain.gain.setValueAtTime(0, t);
+      this._wash = 0;
+      return;
+    }
+    this.bedGain.gain.setTargetAtTime(this.bedLevel(), t, .12);
+    this.wash.gain.setTargetAtTime(this.washLevel(0, prof), t, .16);
+    this.sparkGain.gain.setTargetAtTime(0, t, .16);
+  }
+};
+
+const Mic = {
+  stream:null, src:null, analyser:null, data:null,
+  level:0, bands:{bass:0, mid:0, treb:0},
+  peak:.10, floors:{bass:.02, mid:.02, treb:.02},
+  bassAvg:.08, midAvg:.08,
+  lastBass:0, lastMid:0, lastTreb:0, lowSince:0, hinted:false,
+  async start(){
+    try {
+      this.stream = await navigator.mediaDevices.getUserMedia({ audio:{ echoCancellation:false, noiseSuppression:false, autoGainControl:false } });
+    } catch (e) {
+      toast("麦克风权限被拒绝，声控律动未开启");
+      return false;
+    }
+    const ctx = AudioEng.ctx;
+    this.src = ctx.createMediaStreamSource(this.stream);
+    this.analyser = ctx.createAnalyser();
+    this.analyser.fftSize = 2048;
+    this.analyser.smoothingTimeConstant = .55;
+    this.src.connect(this.analyser);
+    this.data = new Uint8Array(this.analyser.frequencyBinCount);
+    this.peak = .10;
+    this.floors = {bass:.02, mid:.02, treb:.02};
+    this.level = 0; this.lowSince = 0; this.hinted = false;
+    return true;
+  },
+  stop(){
+    if (this.src){ try { this.src.disconnect(); } catch (e) {} }
+    if (this.stream) this.stream.getTracks().forEach(t => t.stop());
+    this.stream = null; this.src = null; this.analyser = null; this.data = null;
+    this.level = 0; this.bands = {bass:0, mid:0, treb:0};
+  },
+  band(f0, f1, binHz){
+    let a = 0, n = 0;
+    const i0 = Math.max(1, Math.round(f0 / binHz));
+    const i1 = Math.min(this.data.length - 1, Math.round(f1 / binHz));
+    for (let i = i0; i <= i1; i++){ a += this.data[i]; n++; }
+    return n ? a / n / 255 : 0;
+  },
+  deFloor(k, v){
+    const f = this.floors[k];
+    this.floors[k] = v < f ? f * .7 + v * .3 : f + (v - f) * .0006;
+    return Math.max(0, v - this.floors[k] - .010);
+  },
+  tick(now){
+    if (!this.analyser) return;
+    this.analyser.getByteFrequencyData(this.data);
+    const binHz = AudioEng.ctx.sampleRate / this.analyser.fftSize;
+    let bass = this.deFloor("bass", this.band(35, 260, binHz));
+    let mid  = this.deFloor("mid",  this.band(260, 2200, binHz));
+    let treb = this.deFloor("treb", this.band(2200, 9000, binHz));
+
+    const raw = Math.max(bass, mid * 1.1, treb * 1.3);
+    this.peak = Math.max(this.peak * .9985, raw, .04);
+    const gain = (.55 + state.micSens * 1.5) / this.peak;
+    bass = Math.min(1, bass * gain);
+    mid  = Math.min(1, mid * gain);
+    treb = Math.min(1, treb * gain * 1.1);
+
+    const energy = Math.max(bass, mid * .92, treb * .7);
+    this.level += (energy - this.level) * (energy > this.level ? .5 : .10);
+    this.bands.bass = bass; this.bands.mid = mid; this.bands.treb = treb;
+
+    if (this.level > .07){
+      audioPulse = Math.max(audioPulse, this.level * .85);
+      motionTarget = Math.max(motionTarget, this.level * .5);
+      lastActivity = now;
+    }
+
+    this.bassAvg = this.bassAvg * .93 + bass * .07;
+    if (bass > this.bassAvg * 1.22 + .05 && bass > .28 && now - this.lastBass > 230){
+      this.lastBass = now;
+      const k = Math.min(1, bass);
+      dropQueue.push({x:.24 + Math.random() * .52, y:.28 + Math.random() * .44, r:.048 + k * .055, s:(.28 + .5 * k) * state.ripple});
+      audioPulse = Math.max(audioPulse, .55 + .45 * k);
+    }
+    this.midAvg = this.midAvg * .90 + mid * .10;
+    if (mid > this.midAvg * 1.25 + .05 && mid > .22 && now - this.lastMid > 140){
+      this.lastMid = now;
+      dropQueue.push({x:.18 + Math.random() * .64, y:.32 + Math.random() * .40, r:.020 + mid * .030, s:(.10 + .30 * mid) * state.ripple});
+    }
+    if (treb > .34 && now - this.lastTreb > 85){
+      this.lastTreb = now;
+      dropQueue.push({x:Math.random(), y:.15 + Math.random() * .75, r:.012, s:(.05 + treb * .07) * state.ripple});
+    }
+
+    if (this.level < .05){
+      if (!this.lowSince) this.lowSince = now;
+      else if (!this.hinted && now - this.lowSince > 6000){
+        this.hinted = true;
+        toast("声控开着但几乎收不到声音：把外放音量调大些，或拉高「声控灵敏」试试");
+      }
+    } else {
+      this.lowSince = 0;
+    }
+  }
+};
+
+function drawFrameTo(c, W, H, vertical){
+  if (vertical){
+    const ta = W / H, ca = canvas.width / canvas.height;
+    let sw = canvas.width, sh = canvas.height, sx = 0, sy = 0;
+    if (ca > ta){ sw = canvas.height * ta; sx = (canvas.width - sw) / 2; }
+    else { sh = canvas.width / ta; sy = (canvas.height - sh) / 2; }
+    c.drawImage(canvas, sx, sy, sw, sh, 0, 0, W, H);
+  } else {
+    c.drawImage(canvas, 0, 0, W, H);
+  }
+  if (state.watermark){
+    const s = Math.min(W, H) / 1080;
+    c.save();
+    c.globalAlpha = .62;
+    c.fillStyle = "#f0fffb";
+    c.shadowColor = "rgba(0,20,20,.55)";
+    c.shadowBlur = 10 * s;
+    c.font = (30 * s) + 'px "Songti SC","STSong","Noto Serif SC",serif';
+    c.textAlign = "right";
+    c.fillText("水光镜", W - 30 * s, H - 56 * s);
+    c.globalAlpha = .42;
+    c.font = (13 * s) + 'px -apple-system,"PingFang SC",sans-serif';
+    c.fillText("UNDERWATER ASMR", W - 30 * s, H - 32 * s);
+    c.restore();
+  }
+}
+
+const Comp = {
+  cv:document.createElement("canvas"), ctx:null, active:false, vertical:false,
+  begin(vertical){
+    this.vertical = vertical;
+    if (vertical){ this.cv.width = 1080; this.cv.height = 1920; }
+    else { this.cv.width = canvas.width; this.cv.height = canvas.height; }
+    this.ctx = this.cv.getContext("2d");
+    this.active = true;
+    this.draw();
+  },
+  draw(){ drawFrameTo(this.ctx, this.cv.width, this.cv.height, this.vertical); }
+};
+
+const Show = {
+  on:false, pat:-1, nextPat:0, last:0, beatT:0,
+  toggle(){
+    this.on = !this.on;
+    showBtn.classList.toggle("on", this.on);
+    if (this.on){
+      this.pat = -1; this.nextPat = 0; this.last = 0; this.beatT = 0;
+      toast("自动演绎开始：细雨 → 心跳 → 流光 → 漩涡 循环上演，适合直接录 demo");
+    } else {
+      toast("自动演绎已停止");
+    }
+  },
+  tick(now){
+    if (!this.on) return;
+    lastActivity = now;
+    if (now > this.nextPat){ this.pat = (this.pat + 1) % 4; this.nextPat = now + 7000; this.beatT = 0; }
+    if (this.pat === 0){
+      if (now - this.last > 70 + Math.random() * 160){
+        this.last = now;
+        const x = Math.random(), y = .1 + Math.random() * .8;
+        dropQueue.push({x, y, r:.012 + Math.random() * .02, s:(.08 + Math.random() * .22) * state.ripple});
+        if (Math.random() < .3) AudioEng.bloop((x - .5) * 1.7, .25 + Math.random() * .4, .5);
+      }
+    } else if (this.pat === 1){
+      if (now - this.beatT > 1250){
+        this.beatT = now;
+        dropQueue.push({x:.5, y:.48, r:.10, s:.55 * state.ripple});
+        AudioEng.bloop(0, .9, .9);
+        setTimeout(() => {
+          dropQueue.push({x:.5, y:.48, r:.075, s:.4 * state.ripple});
+          AudioEng.bloop(0, .6, .6);
+        }, 170);
+      }
+    } else if (this.pat === 2){
+      if (now - this.last > 26){
+        this.last = now;
+        const ph = now * .00042;
+        dropQueue.push({x:.5 + Math.sin(ph) * .38, y:.5 + Math.sin(ph * 2.3 + 1.2) * .24, r:.02, s:.16 * state.ripple});
+      }
+      if (now - this.beatT > 1900){ this.beatT = now; AudioEng.swoosh(0, .8); }
+    } else {
+      if (now - this.last > 30){
+        this.last = now;
+        const a = now * .0035, rr = .10 + .22 * (.5 + .5 * Math.sin(now * .0009));
+        dropQueue.push({x:.5 + Math.cos(a) * rr, y:.5 + Math.sin(a) * rr, r:.017, s:.15 * state.ripple});
+        if (Math.random() < .05) AudioEng.bloop(Math.cos(a) * .8, .3, .45);
+      }
+    }
+    motionTarget = Math.max(motionTarget, .25);
+  }
+};
+
+let shotPending = false;
+const flashEl = document.getElementById("flash");
+function doShot(){
+  const vertical = document.body.classList.contains("show-safe");
+  const cv = document.createElement("canvas");
+  if (vertical){ cv.width = 1080; cv.height = 1920; }
+  else { cv.width = canvas.width; cv.height = canvas.height; }
+  drawFrameTo(cv.getContext("2d"), cv.width, cv.height, vertical);
+  cv.toBlob(blob => {
+    if (!blob){ toast("拍照失败，请重试"); return; }
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    const d = new Date(), pad = n => String(n).padStart(2,"0");
+    a.download = "水光镜_" + d.getFullYear() + pad(d.getMonth()+1) + pad(d.getDate()) + "_" + pad(d.getHours()) + pad(d.getMinutes()) + pad(d.getSeconds()) + ".png";
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 4000);
+  }, "image/png");
+  flashEl.classList.add("on");
+  requestAnimationFrame(() => requestAnimationFrame(() => flashEl.classList.remove("on")));
+  toast(vertical ? "已拍下 9:16 竖屏照片" : "已拍下当前水面");
+}
+
+const mBass = document.getElementById("mBass");
+const mMid = document.getElementById("mMid");
+const mTreb = document.getElementById("mTreb");
+let meterLive = false;
+function updateMeter(){
+  if (!Mic.analyser){
+    if (meterLive){
+      meterLive = false;
+      mBass.style.transform = mMid.style.transform = mTreb.style.transform = "scaleX(0)";
+    }
+    return;
+  }
+  meterLive = true;
+  mBass.style.transform = "scaleX(" + Mic.bands.bass.toFixed(3) + ")";
+  mMid.style.transform = "scaleX(" + Mic.bands.mid.toFixed(3) + ")";
+  mTreb.style.transform = "scaleX(" + Mic.bands.treb.toFixed(3) + ")";
+}
+
+const Wake = {
+  lock:null,
+  async request(){
+    if (!("wakeLock" in navigator) || this.lock) return;
+    try {
+      this.lock = await navigator.wakeLock.request("screen");
+      this.lock.addEventListener("release", () => { this.lock = null; });
+    } catch (e) {}
+  },
+  async release(){
+    if (!this.lock) return;
+    const lock = this.lock;
+    this.lock = null;
+    try { await lock.release(); } catch (e) {}
+  }
+};
+
+const Rec = {
+  mr:null, chunks:[], t0:0, timer:null,
+  supported(){ return !!(window.MediaRecorder && canvas.captureStream); },
+  mime(){
+    const list = [
+      "video/mp4;codecs=avc1.42E01E,mp4a.40.2",
+      "video/mp4",
+      "video/webm;codecs=vp9,opus",
+      "video/webm;codecs=vp8,opus",
+      "video/webm"
+    ];
+    for (const m of list){ try { if (MediaRecorder.isTypeSupported(m)) return m; } catch (e) {} }
+    return "";
+  },
+  start(){
+    const vertical = document.body.classList.contains("show-safe");
+    Comp.begin(vertical);
+    const vs = Comp.cv.captureStream(60);
+    const tracks = vs.getVideoTracks().slice();
+    if (AudioEng.recDest) tracks.push.apply(tracks, AudioEng.recDest.stream.getAudioTracks());
+    const mm = this.mime();
+    try {
+      this.mr = new MediaRecorder(new MediaStream(tracks), mm ? { mimeType:mm, videoBitsPerSecond:12000000 } : undefined);
+    } catch (e) {
+      Comp.active = false;
+      toast("当前浏览器不支持内置录制，试试 Chrome / Edge");
+      return;
+    }
+    this.chunks = [];
+    this.mr.ondataavailable = e => { if (e.data && e.data.size) this.chunks.push(e.data); };
+    this.mr.onstop = () => this.save();
+    this.mr.start(250);
+    Wake.request();
+    this.t0 = performance.now();
+    state.recording = true;
+    recBtn.classList.add("active");
+    this.timer = setInterval(() => {
+      const s = Math.floor((performance.now() - this.t0) / 1000);
+      recBtn.textContent = String(Math.floor(s / 60)).padStart(2,"0") + ":" + String(s % 60).padStart(2,"0");
+      syncMobileUI();
+    }, 400);
+    syncMobileUI();
+    toast(Comp.vertical ? "开始录制 9:16 竖屏视频，可直接发抖音 / 小红书" : "开始录制，控制台不会进入内置视频");
+  },
+  stop(){
+    if (this.mr && this.mr.state !== "inactive") this.mr.stop();
+    clearInterval(this.timer);
+    Comp.active = false;
+    state.recording = false;
+    recBtn.classList.remove("active");
+    recBtn.textContent = "录制";
+    Wake.release();
+    syncMobileUI();
+  },
+  save(){
+    const type = (this.mr && this.mr.mimeType) || "video/webm";
+    const ext = type.indexOf("mp4") >= 0 ? "mp4" : "webm";
+    const blob = new Blob(this.chunks, { type });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    const d = new Date(), pad = n => String(n).padStart(2,"0");
+    a.download = "水光镜_" + d.getFullYear() + pad(d.getMonth()+1) + pad(d.getDate()) + "_" + pad(d.getHours()) + pad(d.getMinutes()) + pad(d.getSeconds()) + "." + ext;
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 4000);
+    toast("已保存 " + ext.toUpperCase() + " 视频" + (ext === "webm" ? "，发抖音前可用剪映转码" : ""));
+  }
+};
+
+function frame(ms){
+  requestAnimationFrame(frame);
+  const now = ms;
+  const t = now * .001;
+  uploadVideo();
+  if (state.camOn) detectMotion(now);
+  if (Mic.analyser) Mic.tick(now);
+  Show.tick(now);
+  if (started) AudioEng.ambient(now);
+
+  if (!reduceMotion && now - lastActivity > 2500 && now > nextIdleDrop){
+    nextIdleDrop = now + 2800 + Math.random() * 5200;
+    const x = .12 + Math.random() * .76, y = .16 + Math.random() * .68;
+    dropQueue.push({x, y, r:.014 + Math.random() * .024, s:(.045 + Math.random() * .08) * state.ripple});
+    if (started) AudioEng.bloop((x - .5) * 1.5, .22 + Math.random() * .22, .34 + state.flow * .25);
+  }
+
+  motionSmooth += (motionTarget - motionSmooth) * (motionTarget > motionSmooth ? .22 : .055);
+  if (started) AudioEng.tick(clamp(motionSmooth, 0, 1));
+  motionTarget *= .90;
+  audioPulse *= .93;
+  simStep();
+  applyDrops();
+  render(t);
+  if (Comp.active) Comp.draw();
+  if (shotPending){ shotPending = false; doShot(); }
+  updateMeter();
+}
+
+let uiTimer = 0, uiLocked = false;
+function bumpUI(){
+  if (uiLocked) return;
+  document.body.classList.remove("idle");
+  clearTimeout(uiTimer);
+  uiTimer = setTimeout(() => document.body.classList.add("idle"), 3300);
+}
+["pointermove","pointerdown","keydown"].forEach(ev => window.addEventListener(ev, bumpUI, { passive:true }));
+
+let lpx = 0, lpy = 0, lpt = 0, lastPtrDrop = 0, lastPtrBloop = 0;
+window.addEventListener("pointermove", e => {
+  const now = performance.now();
+  const x = e.clientX / innerWidth, y = 1 - e.clientY / innerHeight;
+  if (lpt){
+    const dt = Math.max(8, now - lpt);
+    const dist = Math.hypot(e.clientX - lpx, e.clientY - lpy);
+    if (dist > 5 && now - lastPtrDrop > 16){
+      lastPtrDrop = now;
+      const spd = Math.min(1, dist / dt * 1.35);
+      dropQueue.push({x, y, r:.018 + spd * .027, s:(.065 + .29 * spd) * state.ripple});
+      motionTarget = Math.max(motionTarget, spd * .68);
+      lastActivity = now;
+      if (started && spd > .45 && now - lastPtrBloop > 245){
+        lastPtrBloop = now;
+        AudioEng.bloop((x - .5) * 1.6, spd * .74, .54);
+      }
+    }
+  }
+  lpx = e.clientX; lpy = e.clientY; lpt = now;
+});
+window.addEventListener("pointerdown", e => {
+  const x = e.clientX / innerWidth, y = 1 - e.clientY / innerHeight;
+  dropQueue.push({x, y, r:.044, s:.50 * state.ripple});
+  lastActivity = performance.now();
+  if (started) AudioEng.bloop((x - .5) * 1.6, .82, .86);
+});
+
+const controls = [
+  ["volume","vVolume","volume", v => Math.round(v * 100) + "%"],
+  ["flow","vFlow","flow", v => Math.round(v * 100) + "%"],
+  ["sens","vSens","sens", v => Math.round(v * 100) + "%"],
+  ["depth","vDepth","depth", v => Math.round(v * 100) + "%"],
+  ["ambient","vAmbient","ambient", v => Math.round(v * 100) + "%"],
+  ["sparkle","vSparkle","sparkle", v => Math.round(v * 100) + "%"],
+  ["micSens","vMicSens","micSens", v => Math.round(v * 100) + "%"],
+  ["ripple","vRipple","ripple", v => v.toFixed(2)],
+  ["caustics","vCaustics","caustics", v => v.toFixed(2)],
+  ["shafts","vShafts","shafts", v => v.toFixed(2)],
+  ["bubbles","vBubbles","bubbles", v => v.toFixed(2)],
+  ["tint","vTint","tint", v => Math.round(v * 100) + "%"],
+  ["damping","vDamping","damping", v => v.toFixed(3)]
+];
+function syncControls(){
+  for (const [id,out,key,fmt] of controls){
+    const el = document.getElementById(id);
+    const label = document.getElementById(out);
+    el.value = state[key];
+    label.textContent = fmt(state[key]);
+  }
+  document.getElementById("soundBtn").classList.toggle("on", state.sound);
+  document.getElementById("mirrorBtn").classList.toggle("on", state.mirror);
+  document.getElementById("safeBtn").classList.toggle("on", document.body.classList.contains("show-safe"));
+  $all(".preset").forEach(b => b.classList.toggle("on", b.dataset.preset === state.preset));
+  $all(".sound-mode").forEach(b => b.classList.toggle("on", b.dataset.sound === state.soundMode));
+  syncMobileUI();
+}
+for (const [id,out,key,fmt] of controls){
+  const el = document.getElementById(id);
+  const label = document.getElementById(out);
+  el.addEventListener("input", () => {
+    state[key] = parseFloat(el.value);
+    label.textContent = fmt(state[key]);
+    if (key !== "micSens" && state.preset){
+      state.preset = "";
+      $all(".preset").forEach(b => b.classList.remove("on"));
+    }
+    AudioEng.setParams();
+  });
+}
+function applyPreset(name){
+  Object.assign(state, PRESETS[name]);
+  state.preset = name;
+  syncControls();
+  AudioEng.setParams();
+  clearWater();
+  dropQueue.push({x:.5, y:.46, r:.075, s:.36 * state.ripple});
+  toast($(`.preset[data-preset="${name}"]`).textContent + " 已应用");
+}
+$all(".preset").forEach(btn => btn.addEventListener("click", () => applyPreset(btn.dataset.preset)));
+$all(".sound-mode").forEach(btn => btn.addEventListener("click", () => {
+  state.soundMode = btn.dataset.sound;
+  if (state.soundMode === "drops") state.ambient = 0;
+  syncControls();
+  AudioEng.setParams();
+  toast(btn.textContent + " 已切换");
+}));
+
+function syncMobileUI(){
+  const hud = document.getElementById("mobileHud");
+  if (!hud) return;
+  const mSound = document.getElementById("mSoundBtn");
+  const mFlip = document.getElementById("mFlipBtn");
+  const mPreset = document.getElementById("mPresetBtn");
+  const mSheet = document.getElementById("mSheetBtn");
+  const mSafe = document.getElementById("mSafeBtn");
+  const mRec = document.getElementById("mRecBtn");
+  const mFace = document.getElementById("mFacingLabel");
+  const safeOn = document.body.classList.contains("show-safe");
+  if (mSound){
+    mSound.classList.toggle("on", state.sound && state.volume > 0);
+    mSound.textContent = state.sound && state.volume > 0 ? "声音" : "静音";
+  }
+  if (mFlip) mFlip.textContent = facing === "user" ? "自拍" : "后置";
+  if (mFace) mFace.textContent = facing === "user" ? "自拍镜头" : "后置镜头";
+  if (mPreset) mPreset.textContent = PRESET_LABELS[state.preset] || "自定";
+  if (mSheet){
+    const open = document.body.classList.contains("sheet-open");
+    mSheet.classList.toggle("on", open);
+    mSheet.textContent = open ? "收起" : "参数";
+  }
+  if (mSafe){
+    mSafe.classList.toggle("on", safeOn);
+    mSafe.textContent = safeOn ? "9:16" : "全屏";
+  }
+  if (mRec){
+    mRec.classList.toggle("recording", state.recording);
+    mRec.setAttribute("aria-label", state.recording ? "停止录制" : "开始录制");
+    const label = mRec.querySelector("span");
+    if (label) label.textContent = state.recording ? recBtn.textContent : "";
+  }
+}
+
+function setMobileSheet(open){
+  if (!isMobileCreator) return;
+  document.body.classList.toggle("sheet-open", open);
+  syncMobileUI();
+  bumpUI();
+}
+
+const mobilePresetOrder = ["gentle","clear","viral","still"];
+
+const soundBtn = document.getElementById("soundBtn");
+const mirrorBtn = document.getElementById("mirrorBtn");
+const micBtn = document.getElementById("micBtn");
+const recBtn = document.getElementById("recBtn");
+const photoBtn = document.getElementById("photoBtn");
+const showBtn = document.getElementById("showBtn");
+const camBtn = document.getElementById("camBtn");
+const flipBtn = document.getElementById("flipBtn");
+const safeBtn = document.getElementById("safeBtn");
+const fsBtn = document.getElementById("fsBtn");
+const calmBtn = document.getElementById("calmBtn");
+const wmBtn = document.getElementById("wmBtn");
+const hideBtn = document.getElementById("hideBtn");
+const resetBtn = document.getElementById("resetBtn");
+
+let facing = isMobileCreator ? "environment" : "user";
+function cameraPreflight(){
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) return "当前浏览器不支持网页摄像头，请换 Safari / Chrome 再试";
+  const local = ["localhost","127.0.0.1","::1",""].includes(location.hostname) || location.protocol === "file:";
+  if (location.protocol !== "https:" && !local) return "手机摄像头需要 HTTPS 网址，发布到 GitHub Pages 后再用手机打开";
+  return "";
+}
+function cameraConstraints(target, relaxed){
+  if (relaxed) return { video:true, audio:false };
+  const idealW = isMobileCreator ? 1920 : 1280;
+  const idealH = isMobileCreator ? 1080 : 720;
+  return {
+    video:{
+      facingMode:{ ideal:target },
+      width:{ ideal:idealW },
+      height:{ ideal:idealH }
+    },
+    audio:false
+  };
+}
+function cameraErrorText(err){
+  const name = err && err.name ? err.name : "";
+  if (name === "NotAllowedError" || name === "SecurityError") return "摄像头权限被拒绝，请在浏览器地址栏或系统设置里允许相机";
+  if (name === "NotFoundError" || name === "OverconstrainedError") return "没有找到这个方向的镜头，已尝试切换可用摄像头";
+  if (name === "NotReadableError") return "摄像头正被其他应用占用，关闭后再试";
+  return "摄像头不可用，检查系统权限后再试";
+}
+async function enableCam(){
+  const blocked = cameraPreflight();
+  if (blocked){ toast(blocked); return false; }
+  let lastErr = null;
+  try {
+    try {
+      camStream = await navigator.mediaDevices.getUserMedia(cameraConstraints(facing, false));
+    } catch (err) {
+      lastErr = err;
+      camStream = await navigator.mediaDevices.getUserMedia(cameraConstraints(facing, true));
+    }
+    video.srcObject = camStream;
+    await video.play();
+    const track = camStream.getVideoTracks()[0];
+    const settings = track && track.getSettings ? track.getSettings() : {};
+    if (settings.facingMode === "user" || settings.facingMode === "environment") facing = settings.facingMode;
+    videoReady = true;
+    state.camOn = true;
+    state.mirror = facing === "user";
+    buildMotion();
+    camBtn.classList.add("on");
+    syncControls();
+    return true;
+  } catch (e) {
+    if (lastErr) console.warn(lastErr);
+    console.warn(e);
+    toast(cameraErrorText(e || lastErr));
+    return false;
+  }
+}
+function disableCam(){
+  if (camStream) camStream.getTracks().forEach(t => t.stop());
+  camStream = null;
+  video.srcObject = null;
+  videoReady = false;
+  state.camOn = false;
+  camBtn.classList.remove("on");
+  syncMobileUI();
+}
+function setupMobileControls(){
+  const mSound = document.getElementById("mSoundBtn");
+  const mFlip = document.getElementById("mFlipBtn");
+  const mPreset = document.getElementById("mPresetBtn");
+  const mSheet = document.getElementById("mSheetBtn");
+  const mPhoto = document.getElementById("mPhotoBtn");
+  const mRec = document.getElementById("mRecBtn");
+  const mSafe = document.getElementById("mSafeBtn");
+  const head = document.querySelector("#hud .panel-head");
+  if (mSound) mSound.addEventListener("click", () => {
+    if (state.volume <= 0){
+      state.volume = isMobileCreator ? .34 : .42;
+      state.sound = true;
+      syncControls();
+      AudioEng.setParams();
+      toast("声音已恢复");
+      return;
+    }
+    soundBtn.click();
+  });
+  if (mFlip) mFlip.addEventListener("click", () => {
+    if (!state.camOn) camBtn.click();
+    else flipBtn.click();
+  });
+  if (mPreset) mPreset.addEventListener("click", () => {
+    const i = mobilePresetOrder.indexOf(state.preset);
+    applyPreset(mobilePresetOrder[(i + 1) % mobilePresetOrder.length]);
+  });
+  if (mSheet) mSheet.addEventListener("click", () => setMobileSheet(!document.body.classList.contains("sheet-open")));
+  if (mPhoto) mPhoto.addEventListener("click", () => photoBtn.click());
+  if (mRec) mRec.addEventListener("click", () => recBtn.click());
+  if (mSafe) mSafe.addEventListener("click", () => safeBtn.click());
+  if (head) head.addEventListener("click", () => {
+    if (isMobileCreator && document.body.classList.contains("sheet-open")) setMobileSheet(false);
+  });
+}
+setupMobileControls();
+
+soundBtn.addEventListener("click", () => {
+  state.sound = !state.sound;
+  syncControls();
+  if (AudioEng.ctx && AudioEng.ctx.state === "suspended") AudioEng.ctx.resume();
+  AudioEng.setParams();
+});
+mirrorBtn.addEventListener("click", () => {
+  state.mirror = !state.mirror;
+  motion.prev = null;
+  syncControls();
+});
+micBtn.addEventListener("click", async () => {
+  if (!started){ toast("先开启水面"); return; }
+  if (Mic.analyser){
+    Mic.stop();
+    micBtn.classList.remove("on");
+    toast("声控律动已关闭");
+    return;
+  }
+  const ok = await Mic.start();
+  if (ok){
+    micBtn.classList.add("on");
+    toast("声控已开启：说话、拍手、外放音乐都会掀动水面，控制台里能看到声浪条");
+  }
+});
+photoBtn.addEventListener("click", () => {
+  if (!started){ toast("先开启水面"); return; }
+  shotPending = true;
+});
+showBtn.addEventListener("click", () => {
+  if (!started){ toast("先开启水面"); return; }
+  Show.toggle();
+});
+camBtn.addEventListener("click", async () => {
+  if (!started){ toast("先开启水面"); return; }
+  if (state.camOn){
+    disableCam();
+    toast("摄像头已关闭，可以继续用指尖玩水");
+  } else {
+    camBtn.textContent = "唤醒中";
+    const ok = await enableCam();
+    camBtn.textContent = "镜头";
+    toast(ok ? "摄像头已开启，对镜头缓慢挥手" : "摄像头不可用，检查系统权限后再试");
+  }
+});
+flipBtn.addEventListener("click", async () => {
+  if (!state.camOn){ toast("先点「镜头」开启摄像头"); return; }
+  const prevFacing = facing;
+  facing = facing === "user" ? "environment" : "user";
+  disableCam();
+  const ok = await enableCam();
+  if (ok){
+    state.mirror = facing === "user";
+    syncControls();
+    toast(facing === "user" ? "已切换到前置镜头" : "已切换到后置镜头");
+  } else {
+    facing = prevFacing;
+    if (await enableCam()) toast("这台设备只有一个可用镜头");
+    else toast("摄像头切换失败");
+  }
+});
+wmBtn.addEventListener("click", () => {
+  state.watermark = !state.watermark;
+  wmBtn.classList.toggle("on", state.watermark);
+  toast(state.watermark ? "品牌水印会印在录制视频和照片右下角" : "已去掉水印");
+});
+recBtn.addEventListener("click", () => {
+  if (!started){ toast("先开启水面"); return; }
+  if (!Rec.supported()){
+    toast(isMobileCreator ? "这个手机浏览器不支持网页内录，可先用系统录屏，或换新版 Safari / Chrome" : "当前浏览器不支持内置录制");
+    return;
+  }
+  if (state.recording) Rec.stop(); else Rec.start();
+});
+safeBtn.addEventListener("click", () => {
+  document.body.classList.toggle("show-safe");
+  safeBtn.classList.toggle("on", document.body.classList.contains("show-safe"));
+  syncMobileUI();
+});
+function toggleFS(){
+  const de = document.documentElement;
+  if (document.fullscreenElement || document.webkitFullscreenElement){
+    (document.exitFullscreen || document.webkitExitFullscreen || function(){}).call(document);
+  } else if (de.requestFullscreen || de.webkitRequestFullscreen){
+    (de.requestFullscreen || de.webkitRequestFullscreen).call(de);
+  } else {
+    toast("当前浏览器不支持全屏");
+  }
+}
+fsBtn.addEventListener("click", toggleFS);
+calmBtn.addEventListener("click", () => { clearWater(); toast("水面已平静"); });
+hideBtn.addEventListener("click", () => {
+  if (isMobileCreator){
+    setMobileSheet(false);
+    document.body.classList.add("idle");
+    toast("已收起控制，轻触画面即可回来");
+    return;
+  }
+  uiLocked = !uiLocked;
+  document.body.classList.toggle("ui-hidden", uiLocked);
+  if (!uiLocked) bumpUI();
+});
+resetBtn.addEventListener("click", () => applyPreset("gentle"));
+
+window.addEventListener("keydown", e => {
+  if (e.repeat || (e.target && e.target.tagName === "INPUT")) return;
+  const k = e.key.toLowerCase();
+  if (k === "f") toggleFS();
+  else if (k === "m") mirrorBtn.click();
+  else if (k === "r" && started && Rec.supported()){ if (state.recording) Rec.stop(); else Rec.start(); }
+  else if (k === "h") hideBtn.click();
+  else if (k === "c") calmBtn.click();
+  else if (k === "s") soundBtn.click();
+  else if (k === "p" && started) shotPending = true;
+  else if (k === "d" && started) Show.toggle();
+});
+document.addEventListener("visibilitychange", () => {
+  if (!AudioEng.ctx || state.recording) return;
+  if (document.hidden) AudioEng.ctx.suspend();
+  else if (started) AudioEng.ctx.resume();
+});
+
+async function start(withCam){
+  if (started) return;
+  AudioEng.init();
+  if (AudioEng.ctx && AudioEng.ctx.state === "suspended"){
+    try { await AudioEng.ctx.resume(); } catch (e) {}
+  }
+  started = true;
+  state.camOn = false;
+  if (withCam){
+    startBtn.textContent = isMobileCreator ? "正在唤醒后置镜头" : "正在唤醒摄像头";
+    const ok = await enableCam();
+    if (!ok) toast(isMobileCreator ? "已进入无镜头试水模式，点「后置」可重试相机" : "摄像头不可用，已进入无镜头指尖试水模式，随时可点「镜头」重试");
+  }
+  document.body.classList.remove("pre");
+  intro.classList.add("gone");
+  setTimeout(() => intro.remove(), 900);
+  dropQueue.push({x:.5, y:.45, r:.09, s:.58 * state.ripple});
+  dropQueue.push({x:.34, y:.55, r:.04, s:.28 * state.ripple});
+  AudioEng.bloop(-.16, .9, .86);
+  AudioEng.bloop(.22, .55, .58, .12);
+  toast(state.camOn ? (isMobileCreator ? "后置 9:16 已就绪，慢慢靠近手或物体制造水纹" : "戴上耳机，对镜头缓慢挥手") : "用鼠标或手指慢慢划过水面");
+  bumpUI();
+}
+startBtn.addEventListener("click", () => start(true));
+noCamBtn.addEventListener("click", () => start(false));
+
+let resizeTimer = 0;
+function resize(){
+  const dpr = Math.min(window.devicePixelRatio || 1, isMobileCreator ? 1.25 : 1.75);
+  canvas.width = Math.max(2, Math.floor(innerWidth * dpr));
+  canvas.height = Math.max(2, Math.floor(innerHeight * dpr));
+  buildSim();
+  buildMotion();
+}
+window.addEventListener("resize", () => {
+  clearTimeout(resizeTimer);
+  resizeTimer = setTimeout(resize, 160);
+});
+
+function fatal(msg){
+  const desc = document.querySelector(".desc");
+  desc.innerHTML = msg;
+  startBtn.style.display = "none";
+  noCamBtn.style.display = "none";
+}
+
+try {
+  initGL();
+  resize();
+  syncControls();
+  requestAnimationFrame(frame);
+} catch (err) {
+  console.error(err);
+  fatal("当前浏览器不支持这个水面所需的 WebGL 浮点渲染。<br>请换用较新的 Chrome / Edge / Safari 再打开。");
+}
+</script>
+</body>
+</html>
